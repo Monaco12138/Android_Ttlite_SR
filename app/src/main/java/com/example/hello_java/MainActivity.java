@@ -78,9 +78,9 @@ public class MainActivity extends AppCompatActivity {
         Log.i("image rotation", "rotation: " + rotation);
 
 
-        ImageAnalyse imageAnalyse = new ImageAnalyse(cameraPreviewWrap, imageView);
+        ImageAnalyse imageAnalyse = new ImageAnalyse(cameraPreviewWrap, imageView, rotation);
 
-        cameraProcess.showCameraSupportSize(MainActivity.this);
+        //cameraProcess.showCameraSupportSize(MainActivity.this);
 
         cameraProcess.startCamera(MainActivity.this, imageAnalyse, cameraPreviewWrap);
 //        //监听botton

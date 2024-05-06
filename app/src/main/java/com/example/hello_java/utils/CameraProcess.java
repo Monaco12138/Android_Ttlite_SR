@@ -111,7 +111,7 @@ public class CameraProcess {
                     Size[] previewSizes = cc.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
                             .getOutputSizes(SurfaceTexture.class);
                     for (Size s : previewSizes){
-                        Log.i("camera supprot size", s.getHeight()+"/"+s.getWidth());
+                        Log.i("camera support size", s.getHeight()+"/"+s.getWidth());
                     }
                     break;
 

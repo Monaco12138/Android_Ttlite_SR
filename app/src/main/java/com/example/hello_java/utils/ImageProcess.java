@@ -1,5 +1,8 @@
 package com.example.hello_java.utils;
 
+import android.graphics.Matrix;
+import android.util.Log;
+
 import androidx.camera.core.ImageProxy;
 
 import java.nio.ByteBuffer;
@@ -118,5 +121,98 @@ public class ImageProcess {
                 out[yp++] = YUV2RGB(0xff & yData[pY + i], 0xff & uData[uv_offset], 0xff & vData[uv_offset]);
             }
         }
+    }
+
+    /**
+     *  计算图片旋转矩阵
+     * @param srcWidth
+     * @param srcHeight
+     * @param dstWidth
+     * @param dstHeight
+     * @param applyRotation:90
+     * @param maintainAspectRatio:false
+     * @return 变换矩阵
+     */
+    /*
+         *             O-------------------------------> x
+         *             |                              |
+         *             |                              |
+         *             |                              |  srcHeight, inWidth
+         *             |                              |
+         *          Y  |                              |
+         *             V                              |
+         *             --------------------------------
+         *                     srcWidth, inHeight
+         *
+         * matrix.postTranslate(-srcWidth/2.0f, -srcHeight/2.0f)  将图像中心点移动到(0,0)
+         *       .postRotate(90)  旋转90度
+         *       .postScale(dstWidth/inWidth, dstHeight/inHeight)  缩放
+         *       .posTranslate(dstWidth/2.0f, dstHeight/2.0f)     移动图像中心点
+         *
+         *         O-------------------> x
+     *             |                   |
+     *             |                   |
+     *             |                   |  dstHeight
+     *             |                   |
+     *             |                   |
+     *             |                   |
+     *             |                   |
+     *             |                   |
+     *             |                   |
+     *          Y  |                   |
+     *             V                   |
+     *             --------------------
+     *                   dstWidth
+     */
+    public Matrix getTransformationMatrix(
+            final int srcWidth,
+            final int srcHeight,
+            final int dstWidth,
+            final int dstHeight,
+            final int applyRotation,
+            final boolean maintainAspectRatio) {
+        final Matrix matrix = new Matrix();
+
+        if (applyRotation != 0) {
+            if (applyRotation % 90 != 0) {
+                Log.e("Rotation", "Rotation != 90°, got: " + Integer.toString(applyRotation));
+            }
+
+            // Translate so center of image is at origin.
+            matrix.postTranslate(-srcWidth / 2.0f, -srcHeight / 2.0f);
+
+            // Rotate around origin.
+            matrix.postRotate(applyRotation);
+        }
+
+        // Account for the already applied rotation, if any, and then determine how
+        // much scaling is needed for each axis.
+        final boolean transpose = (Math.abs(applyRotation) + 90) % 180 == 0;
+
+        final int inWidth = transpose ? srcHeight : srcWidth;
+        final int inHeight = transpose ? srcWidth : srcHeight;
+
+        // Apply scaling if necessary.
+        if (inWidth != dstWidth || inHeight != dstHeight) {
+            final float scaleFactorX = dstWidth / (float) inWidth;
+            final float scaleFactorY = dstHeight / (float) inHeight;
+
+            if (maintainAspectRatio) {
+                // Scale by minimum factor so that dst is filled completely while
+                // maintaining the aspect ratio. Some image may fall off the edge.
+                final float scaleFactor = Math.max(scaleFactorX, scaleFactorY);
+                matrix.postScale(scaleFactor, scaleFactor);
+            } else {
+                // Scale exactly to fill dst from src.
+                matrix.postScale(scaleFactorX, scaleFactorY);
+            }
+        }
+
+        if (applyRotation != 0) {
+            // Translate back from origin centered reference to destination frame.
+            matrix.postTranslate(dstWidth / 2.0f, dstHeight / 2.0f);
+        }
+
+        return matrix;
     }
 }

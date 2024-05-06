@@ -16,9 +16,16 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
     ImageView imageView;
     ImageProcess imageProcess;
     PreviewView previewView;
-    public ImageAnalyse(PreviewView previewView, ImageView imageView) {
+    int rotation;
+
+    int targetWidth;
+    int targetHeight;
+    public ImageAnalyse(PreviewView previewView, ImageView imageView, int rotation) {
         this.imageView = imageView;
         this.previewView = previewView;
+        this.rotation = rotation;
+        this.targetWidth = 1080;
+        this.targetHeight = 1920;
         this.imageProcess = new ImageProcess();
     }
 
@@ -33,6 +40,9 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
         int imageWidth = image.getWidth();
 
         // (480, 640)
+        // 这里的height, weight 是 竖直拿手机的绝对视图对应的height, weight
+        // 在CameraProcess 里setTargetResolution(new Size(1080, 1920)) 设置的分辨率是摄像头出来的(w,h)
+        // 直接放到ImageView中显示会旋转90°
         Log.i("ImageProxy image size & Preview size:", imageHeight + " " + imageWidth + " & " + previewHeight + " " + previewWidth);
 //        int rotationDegrees = image.getImageInfo().getRotationDegrees();
 //        Log.i("image rotation2", "rotation: " + rotationDegrees);
@@ -62,13 +72,25 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
         Bitmap imageBitmap = Bitmap.createBitmap(imageWidth, imageHeight, Bitmap.Config.ARGB_8888);
         imageBitmap.setPixels(rgbBytes, 0, imageWidth, 0, 0, imageWidth, imageHeight);
 
+
+
+        Matrix postTransformMatrix = imageProcess.getTransformationMatrix(
+                imageWidth, imageHeight,
+                targetWidth, targetHeight,
+                90,
+                false
+        );
+
+        Bitmap postTransformImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, postTransformMatrix, false);
+        Bitmap cropImageBitmap = Bitmap.createBitmap(postTransformImageBitmap, 0, 0, previewWidth, previewHeight);
+
         // 旋转图像，Analyse 出来的每一帧图像都是默认相机传感器方向（横向的），在竖屏模式下图像会自动旋转90度，需要手动调整
         // 旋转90°
-        Matrix matrix = new Matrix();
-        matrix.postRotate(90);
-        Bitmap fullImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, matrix, false);
+//        Matrix matrix = new Matrix();
+//        matrix.postRotate(90);
+//        Bitmap fullImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, matrix, false);
 
-        imageView.setImageBitmap(fullImageBitmap);
+        imageView.setImageBitmap(cropImageBitmap);
         image.close();
     }
 }
