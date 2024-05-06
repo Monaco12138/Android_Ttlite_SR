@@ -63,6 +63,7 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
         imageBitmap.setPixels(rgbBytes, 0, imageWidth, 0, 0, imageWidth, imageHeight);
 
         // 旋转图像，Analyse 出来的每一帧图像都是默认相机传感器方向（横向的），在竖屏模式下图像会自动旋转90度，需要手动调整
+        // 旋转90°
         Matrix matrix = new Matrix();
         matrix.postRotate(90);
         Bitmap fullImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, matrix, false);
