@@ -1,4 +1,5 @@
 package com.example.hello_java.analysis;
+import com.example.hello_java.ml.Quicsr540p;
 import com.example.hello_java.ml.QuicsrSmallx2;
 import com.example.hello_java.utils.ImageProcess;
 
@@ -27,15 +28,15 @@ import java.nio.ByteBuffer;
 // 第二种方法就是直接使用原始格式，放到Assets文件夹里面加载
 public class Inference {
     // 这个tflite的输入输出要 和 真实的对应上
-    QuicsrSmallx2 tfmodel;
-    private final Size INPNUT_SIZE = new Size(1080, 1920);
+    Quicsr540p tfmodel;
+    private final Size INPNUT_SIZE = new Size(960, 540);
 
     // output size: [b, c, h, w]
     private final int[] OUTPUT_SIZE = new int[] {3, 3840, 2160};
     public void initialModel(Context activity) {
         try {
             // 要tflite 2.16.1 版本才支持 Transpose version 6操作
-            tfmodel = QuicsrSmallx2.newInstance(activity);
+            tfmodel = Quicsr540p.newInstance(activity);
             Log.i("tflite Support", "Success loading model");
         } catch (IOException e){
             Log.e("tflite Support", "Error loading model: ", e);
@@ -43,7 +44,7 @@ public class Inference {
         }
     }
 
-    public void superResolution(Bitmap bitmap) {
+    public int[] superResolution(Bitmap bitmap) {
 
         // 这所有的操作都是针对[b, h, w, c]格式的
         ImageProcessor imageProcessor = new ImageProcessor.Builder()
@@ -78,22 +79,35 @@ public class Inference {
             }
         }
 
-        TensorBuffer chwTensorBuffer = TensorBuffer.createFixedSize(new int[]{1, channel, height, width}, DataType.FLOAT32);
+        TensorBuffer chwTensorBuffer = TensorBuffer.createFixedSize(new int[]{channel, height, width}, DataType.FLOAT32);
         chwTensorBuffer.loadArray(chwData);
-        int[] tmpshape = chwTensorBuffer.getShape();
-        for (int i = 0; i < tmpshape.length; i++) {
-            Log.i("Debug tmp TensorBuffer shape", i + " " + tmpshape[i]);
-        }
 
-        QuicsrSmallx2.Outputs outputs = tfmodel.process(chwTensorBuffer);
+
+        Quicsr540p.Outputs outputs = tfmodel.process(chwTensorBuffer);
         TensorBuffer chwOutputTensorBuffer = outputs.getOutputFeature0AsTensorBuffer();
         int[] outshape = chwOutputTensorBuffer.getShape();
+        int outHeight = outshape[2];
+        int outWidth = outshape[3];
         //outshape: [b, c, h, w] = [1, 3, 2160, 3840]
         for (int i = 0; i < outshape.length; i++) {
             Log.i("Debug output TensorBuffer shape", i + " " + outshape[i]);
         }
+
         //TensorBuffer to Bitmap
-//        float[] chwOutputData = chwOutputTensorBuffer.getFloatArray();
-//        int[] pixels = new int[OUTPUT_SIZE[1] * OUTPUT_SIZE[2]];
+        float[] chwOutputData = chwOutputTensorBuffer.getFloatArray();
+        int[] pixels = new int[outHeight * outWidth];
+        int yp = 0;
+        for (int h = 0; h < outHeight; h++) {
+            for (int w = 0; w < outWidth; w++) {
+                int r = (int) (chwOutputData[h * outWidth + w] * 255);
+                int g = (int) (chwOutputData[outHeight * outWidth + h * outWidth + w] * 255);
+                int b = (int) (chwOutputData[2 * outHeight * outWidth + h * outWidth + w] * 255);
+                r = r > 255 ? 255 : (Math.max(r, 0));
+                g = g > 255 ? 255 : (Math.max(g, 0));
+                b = b > 255 ? 255 : (Math.max(b, 0));
+                pixels[yp++] = 0xff000000 | (r << 16 & 0xff0000) | (g << 8 & 0xff00) | (b & 0xff);
+            }
+        }
+        return pixels;
     }
 }

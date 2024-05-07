@@ -83,13 +83,22 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
 //        matrix.postRotate(90);
 //        Bitmap fullImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, matrix, false);
 
-        // 应用该变化矩阵
-        Bitmap postTransformImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, postTransformMatrix, false);
-        // 裁剪大小
+//        // 应用该变化矩阵
+//        Bitmap postTransformImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, postTransformMatrix, false);
+//        // 裁剪大小
+//        Bitmap cropImageBitmap = Bitmap.createBitmap(postTransformImageBitmap, 0, 0, previewWidth, previewHeight);
+
+
+//        srTFLiteInference.superResolution(cropImageBitmap);
+        int[] pixels = srTFLiteInference.superResolution(imageBitmap);
+
+        int outWidth = imageWidth;
+        int outHeight = imageHeight;
+        Bitmap outBitmap = Bitmap.createBitmap(outWidth, outHeight, Bitmap.Config.ARGB_8888);
+        outBitmap.setPixels(pixels, 0, outWidth, 0, 0, outWidth, outHeight);
+        Bitmap postTransformImageBitmap = Bitmap.createBitmap(outBitmap, 0, 0, outWidth, outHeight, postTransformMatrix, false);
         Bitmap cropImageBitmap = Bitmap.createBitmap(postTransformImageBitmap, 0, 0, previewWidth, previewHeight);
 
-
-        srTFLiteInference.superResolution(cropImageBitmap);
         imageView.setImageBitmap(cropImageBitmap);
         image.close();
     }
