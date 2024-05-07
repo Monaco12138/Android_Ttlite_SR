@@ -16,6 +16,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.hello_java.analysis.ImageAnalyse;
+import com.example.hello_java.analysis.Inference;
 import com.example.hello_java.utils.CameraProcess;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -35,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean Is_Super_Resolution = false;
     private Switch immersive;
+    private Inference srTFLiteInference;
 
     public int getScreenOrientation() {
         switch (getWindowManager().getDefaultDisplay().getRotation()) {
@@ -49,6 +51,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void initModel() {
+        try {
+            this.srTFLiteInference = new Inference();
+            this.srTFLiteInference.initialModel(this);
+        } catch (Exception e) {
+            Log.e("Error Exception", "MainActivity initial model error: " + e.getMessage() + e.toString());
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,15 +84,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // 获取手机摄像头拍照旋转参数
+        // rotation = 0°
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
         Log.i("image rotation", "rotation: " + rotation);
 
+        initModel();
 
-        ImageAnalyse imageAnalyse = new ImageAnalyse(cameraPreviewWrap, imageView, rotation);
+        ImageAnalyse imageAnalyse = new ImageAnalyse(cameraPreviewWrap, imageView, srTFLiteInference);
 
         //cameraProcess.showCameraSupportSize(MainActivity.this);
 
         cameraProcess.startCamera(MainActivity.this, imageAnalyse, cameraPreviewWrap);
+
 //        //监听botton
 //        immersive.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 //            @Override

@@ -16,16 +16,15 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
     ImageView imageView;
     ImageProcess imageProcess;
     PreviewView previewView;
-    int rotation;
-
+    Inference srTFLiteInference;
     int targetWidth;
     int targetHeight;
-    public ImageAnalyse(PreviewView previewView, ImageView imageView, int rotation) {
+    public ImageAnalyse(PreviewView previewView, ImageView imageView, Inference srTFLiteInference) {
         this.imageView = imageView;
         this.previewView = previewView;
-        this.rotation = rotation;
         this.targetWidth = 1080;
         this.targetHeight = 1920;
+        this.srTFLiteInference = srTFLiteInference;
         this.imageProcess = new ImageProcess();
     }
 
@@ -72,24 +71,25 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
         Bitmap imageBitmap = Bitmap.createBitmap(imageWidth, imageHeight, Bitmap.Config.ARGB_8888);
         imageBitmap.setPixels(rgbBytes, 0, imageWidth, 0, 0, imageWidth, imageHeight);
 
-
-
+        // 变化矩阵
+        // 旋转图像，Analyse 出来的每一帧图像都是默认相机传感器方向（横向的），在竖屏模式下图像会自动旋转90度，需要手动调整
         Matrix postTransformMatrix = imageProcess.getTransformationMatrix(
                 imageWidth, imageHeight,
                 targetWidth, targetHeight,
                 90,
                 false
         );
-
-        Bitmap postTransformImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, postTransformMatrix, false);
-        Bitmap cropImageBitmap = Bitmap.createBitmap(postTransformImageBitmap, 0, 0, previewWidth, previewHeight);
-
-        // 旋转图像，Analyse 出来的每一帧图像都是默认相机传感器方向（横向的），在竖屏模式下图像会自动旋转90度，需要手动调整
-        // 旋转90°
-//        Matrix matrix = new Matrix();
+        //Matrix matrix = new Matrix();
 //        matrix.postRotate(90);
 //        Bitmap fullImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, matrix, false);
 
+        // 应用该变化矩阵
+        Bitmap postTransformImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, postTransformMatrix, false);
+        // 裁剪大小
+        Bitmap cropImageBitmap = Bitmap.createBitmap(postTransformImageBitmap, 0, 0, previewWidth, previewHeight);
+
+
+        srTFLiteInference.superResolution(cropImageBitmap);
         imageView.setImageBitmap(cropImageBitmap);
         image.close();
     }
