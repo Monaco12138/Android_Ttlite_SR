@@ -10,6 +10,8 @@ import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.view.PreviewView;
 import android.util.Log;
+import android.widget.TextView;
+
 import com.example.hello_java.utils.ImageProcess;
 
 public class ImageAnalyse implements ImageAnalysis.Analyzer{
@@ -17,19 +19,32 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
     ImageProcess imageProcess;
     PreviewView previewView;
     Inference srTFLiteInference;
+    InferenceInterpreter srTFLiteInterpreter;
+    TextView inferenceTimeTextView;
+    TextView frameSizeTextView;
     int targetWidth;
     int targetHeight;
-    public ImageAnalyse(PreviewView previewView, ImageView imageView, Inference srTFLiteInference) {
+    public ImageAnalyse(PreviewView previewView,
+                        ImageView imageView,
+                        Inference srTFLiteInference,
+                        InferenceInterpreter srTFLiteInterpreter,
+                        TextView inferenceTimeTextView,
+                        TextView frameSizeTextView) {
         this.imageView = imageView;
         this.previewView = previewView;
         this.targetWidth = 1080;
         this.targetHeight = 1920;
         this.srTFLiteInference = srTFLiteInference;
+        this.srTFLiteInterpreter = srTFLiteInterpreter;
+        this.inferenceTimeTextView = inferenceTimeTextView;
+        this.frameSizeTextView = frameSizeTextView;
         this.imageProcess = new ImageProcess();
     }
 
     @Override
     public void analyze(@NonNull ImageProxy image) {
+        long startTime = System.currentTimeMillis();
+
         int previewHeight = previewView.getHeight();
         int previewWidth = previewView.getWidth();
 
@@ -90,7 +105,8 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
 
 
 //        srTFLiteInference.superResolution(cropImageBitmap);
-        int[] pixels = srTFLiteInference.superResolution(imageBitmap);
+        //int[] pixels = srTFLiteInference.superResolution(imageBitmap);
+        int[] pixels = srTFLiteInterpreter.superResolution(imageBitmap);
 
         int outWidth = imageWidth;
         int outHeight = imageHeight;
@@ -101,5 +117,9 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
 
         imageView.setImageBitmap(cropImageBitmap);
         image.close();
+        long endTime = System.currentTimeMillis();
+        long costTime = endTime - startTime;
+        inferenceTimeTextView.setText(Long.toString(costTime) + "ms");
+        frameSizeTextView.setText(targetHeight + "x" + targetWidth);
     }
 }
