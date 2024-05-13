@@ -35,7 +35,7 @@ public class InferenceTFLite {
     private String MODEL_FILE = "quicsr_test.tflite";
     private Boolean IS_INT8 = true;
     private final Size INPNUT_SIZE = new Size(960, 540);
-    private final int[] OUTPUT_SIZE = new int[] {1, 3, 1080, 1920};
+    private final int[] OUTPUT_SIZE = new int[] {1, 1080, 1920, 3};
     MetadataExtractor.QuantizationParams input5SINT8QuantParams = new MetadataExtractor.QuantizationParams(0.003921567928045988f, 0);
     MetadataExtractor.QuantizationParams output5SINT8QuantParams = new MetadataExtractor.QuantizationParams(0.003921568859368563f, 0);
     public void initialModel(Context activity) {
@@ -43,7 +43,7 @@ public class InferenceTFLite {
             // 要tflite 2.16.1 版本才支持 Transpose version 6操作
             ByteBuffer tfliteModel = FileUtil.loadMappedFile(activity, MODEL_FILE);
             tflite = new Interpreter(tfliteModel, options);
-            Log.i("tflite Support", "Success loading model");
+            Log.i("Debug tfliteSupport", "Success loading model");
         } catch (IOException e){
             Log.e("tflite Support", "Error loading model: ", e);
             Toast.makeText(activity, "load model error: " + e.getMessage(), Toast.LENGTH_LONG).show();
