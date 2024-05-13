@@ -20,6 +20,7 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
     PreviewView previewView;
     Inference srTFLiteInference;
     InferenceInterpreter srTFLiteInterpreter;
+    InferenceTFLite srTFLite;
     TextView inferenceTimeTextView;
     TextView frameSizeTextView;
     int targetWidth;
@@ -28,6 +29,7 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
                         ImageView imageView,
                         Inference srTFLiteInference,
                         InferenceInterpreter srTFLiteInterpreter,
+                        InferenceTFLite srTFLite,
                         TextView inferenceTimeTextView,
                         TextView frameSizeTextView) {
         this.imageView = imageView;
@@ -36,6 +38,7 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
         this.targetHeight = 1920;
         this.srTFLiteInference = srTFLiteInference;
         this.srTFLiteInterpreter = srTFLiteInterpreter;
+        this.srTFLite = srTFLite;
         this.inferenceTimeTextView = inferenceTimeTextView;
         this.frameSizeTextView = frameSizeTextView;
         this.imageProcess = new ImageProcess();
@@ -106,8 +109,8 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
 
 //        srTFLiteInference.superResolution(cropImageBitmap);
         //int[] pixels = srTFLiteInference.superResolution(imageBitmap);
-        int[] pixels = srTFLiteInterpreter.superResolution(imageBitmap);
-
+//        int[] pixels = srTFLiteInterpreter.superResolution(imageBitmap);
+        int[] pixels = srTFLite.superResolution(imageBitmap);
         int outWidth = imageWidth;
         int outHeight = imageHeight;
         Bitmap outBitmap = Bitmap.createBitmap(outWidth, outHeight, Bitmap.Config.ARGB_8888);

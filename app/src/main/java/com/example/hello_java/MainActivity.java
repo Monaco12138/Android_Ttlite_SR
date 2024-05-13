@@ -18,6 +18,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.example.hello_java.analysis.ImageAnalyse;
 import com.example.hello_java.analysis.Inference;
 import com.example.hello_java.analysis.InferenceInterpreter;
+import com.example.hello_java.analysis.InferenceTFLite;
 import com.example.hello_java.utils.CameraProcess;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private Switch immersive;
     private Inference srTFLiteInference;
     private InferenceInterpreter srTFLiteInterpreter;
+    private InferenceTFLite srTFLite;
 
     public int getScreenOrientation() {
         switch (getWindowManager().getDefaultDisplay().getRotation()) {
@@ -59,10 +61,12 @@ public class MainActivity extends AppCompatActivity {
         try {
 //            this.srTFLiteInference = new Inference();
 //            this.srTFLiteInference.initialModel(this);
-            this.srTFLiteInterpreter = new InferenceInterpreter();
-            this.srTFLiteInterpreter.addNNApiDelegate();
-//            this.srTFLiteInterpreter.addThread(8);
-            this.srTFLiteInterpreter.initialModel(this);
+//            this.srTFLiteInterpreter = new InferenceInterpreter();
+//            this.srTFLiteInterpreter.addNNApiDelegate();
+//            this.srTFLiteInterpreter.initialModel(this);
+            this.srTFLite = new InferenceTFLite();
+            this.srTFLite.addNNApiDelegate();
+            this.srTFLite.initialModel(this);
         } catch (Exception e) {
             Log.e("Error Exception", "MainActivity initial model error: " + e.getMessage() + e.toString());
         }
@@ -102,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
 
         initModel();
 
-        ImageAnalyse imageAnalyse = new ImageAnalyse(cameraPreviewWrap, imageView, srTFLiteInference, srTFLiteInterpreter, inferenceTimeTextView, frameSizeTextView);
+        ImageAnalyse imageAnalyse = new ImageAnalyse(cameraPreviewWrap, imageView, srTFLiteInference, srTFLiteInterpreter, srTFLite,  inferenceTimeTextView, frameSizeTextView);
 
         //cameraProcess.showCameraSupportSize(MainActivity.this);
 
