@@ -23,8 +23,6 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
     InferenceTFLite srTFLite;
     TextView inferenceTimeTextView;
     TextView frameSizeTextView;
-    int targetWidth;
-    int targetHeight;
     public ImageAnalyse(PreviewView previewView,
                         ImageView imageView,
                         Inference srTFLiteInference,
@@ -34,8 +32,6 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
                         TextView frameSizeTextView) {
         this.imageView = imageView;
         this.previewView = previewView;
-        this.targetWidth = 1080;
-        this.targetHeight = 1920;
         this.srTFLiteInference = srTFLiteInference;
         this.srTFLiteInterpreter = srTFLiteInterpreter;
         this.srTFLite = srTFLite;
@@ -91,16 +87,15 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
 
         // 变化矩阵
         // 旋转图像，Analyse 出来的每一帧图像都是默认相机传感器方向（横向的），在竖屏模式下图像会自动旋转90度，需要手动调整
-        Matrix postTransformMatrix = imageProcess.getTransformationMatrix(
-                imageWidth, imageHeight,
-                targetWidth, targetHeight,
-                90,
-                false
-        );
+//        Matrix postTransformMatrix = imageProcess.getTransformationMatrix(
+//                imageWidth, imageHeight,
+//                targetWidth, targetHeight,
+//                90,
+//                false
+//        );
         //Matrix matrix = new Matrix();
 //        matrix.postRotate(90);
 //        Bitmap fullImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, matrix, false);
-
 //        // 应用该变化矩阵
 //        Bitmap postTransformImageBitmap = Bitmap.createBitmap(imageBitmap, 0, 0, imageWidth, imageHeight, postTransformMatrix, false);
 //        // 裁剪大小
@@ -111,11 +106,20 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
         //int[] pixels = srTFLiteInference.superResolution(imageBitmap);
 //        int[] pixels = srTFLiteInterpreter.superResolution(imageBitmap);
         int[] pixels = srTFLite.superResolution(imageBitmap);
-        int outWidth = imageWidth;
-        int outHeight = imageHeight;
+
+        int[] outputSize = srTFLite.getOUTPUT_SIZE();
+        int outWidth = outputSize[2];
+        int outHeight = outputSize[1];
+
         Bitmap outBitmap = Bitmap.createBitmap(outWidth, outHeight, Bitmap.Config.ARGB_8888);
         outBitmap.setPixels(pixels, 0, outWidth, 0, 0, outWidth, outHeight);
-        Bitmap postTransformImageBitmap = Bitmap.createBitmap(outBitmap, 0, 0, outWidth, outHeight, postTransformMatrix, false);
+
+        // 旋转90°
+        Matrix matrix = new Matrix();
+        matrix.postRotate(90);
+        Bitmap postTransformImageBitmap = Bitmap.createBitmap(outBitmap, 0, 0, outWidth, outHeight, matrix, false);
+
+        // 裁剪到适配输出画布
         Bitmap cropImageBitmap = Bitmap.createBitmap(postTransformImageBitmap, 0, 0, previewWidth, previewHeight);
 
         imageView.setImageBitmap(cropImageBitmap);
@@ -123,6 +127,6 @@ public class ImageAnalyse implements ImageAnalysis.Analyzer{
         long endTime = System.currentTimeMillis();
         long costTime = endTime - startTime;
         inferenceTimeTextView.setText(Long.toString(costTime) + "ms");
-        frameSizeTextView.setText(targetHeight + "x" + targetWidth);
+        frameSizeTextView.setText(outWidth + "x" + outHeight);
     }
 }

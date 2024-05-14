@@ -32,10 +32,13 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 public class InferenceTFLite {
     private Interpreter tflite;
     Interpreter.Options options = new Interpreter.Options();
-    private String MODEL_FILE = "quicsr_test.tflite";
-    private Boolean IS_INT8 = true;
+    private String MODEL_FILE = "quicsr_float32_epoch_200.tflite";
+    private Boolean IS_INT8 = false;
     private final Size INPNUT_SIZE = new Size(960, 540);
     private final int[] OUTPUT_SIZE = new int[] {1, 1080, 1920, 3};
+    private long startTime;
+    private long endTime;
+    private long costTime;
     MetadataExtractor.QuantizationParams input5SINT8QuantParams = new MetadataExtractor.QuantizationParams(0.003921567928045988f, 0);
     MetadataExtractor.QuantizationParams output5SINT8QuantParams = new MetadataExtractor.QuantizationParams(0.003921568859368563f, 0);
     public void initialModel(Context activity) {
@@ -48,6 +51,9 @@ public class InferenceTFLite {
             Log.e("tflite Support", "Error loading model: ", e);
             Toast.makeText(activity, "load model error: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+    public int[] getOUTPUT_SIZE() {
+        return OUTPUT_SIZE;
     }
     public int[] superResolution(Bitmap bitmap) {
         TensorImage modelInput;
@@ -67,8 +73,17 @@ public class InferenceTFLite {
                                 .build();
             modelInput = new TensorImage(DataType.FLOAT32);
         }
+        startTime = System.currentTimeMillis();
         modelInput.load(bitmap);
+        // 对输入做预处理，摄像头读取到的画面不一定正好是模型的输入，需要做缩放，并归一化到0，1
         modelInput = imageProcessor.process(modelInput);
+
+        TensorBuffer hwcTensorBuffer = modelInput.getTensorBuffer();
+        int[] shape = hwcTensorBuffer.getShape();
+        // [h,w,c] = [1920, 1080, 3]
+        for (int i = 0; i < shape.length; i++) {
+            Log.i("TFLite input TensorBuffer shape", i + " " + shape[i]);
+        }
 
         TensorBuffer hwcOutputTensorBuffer;
         if (IS_INT8) {
@@ -76,9 +91,17 @@ public class InferenceTFLite {
         } else {
             hwcOutputTensorBuffer = TensorBuffer.createFixedSize(OUTPUT_SIZE, DataType.FLOAT32);
         }
+        endTime = System.currentTimeMillis();
+        costTime = endTime - startTime;
+        Log.i("TFLite pre process time:", Long.toString(costTime) + "ms");
+
+        startTime = System.currentTimeMillis();
         if (tflite != null) {
-            tflite.run(modelInput.getBuffer(), hwcOutputTensorBuffer.getBuffer());
+            tflite.run(hwcTensorBuffer.getBuffer(), hwcOutputTensorBuffer.getBuffer());
         }
+        endTime = System.currentTimeMillis();
+        costTime = endTime - startTime;
+        Log.i("TFLite inference time:", Long.toString(costTime) + "ms");
 
         if (IS_INT8) {
             TensorProcessor tensorProcessor = new TensorProcessor.Builder()
@@ -86,12 +109,14 @@ public class InferenceTFLite {
                     .build();
             hwcOutputTensorBuffer = tensorProcessor.process(hwcOutputTensorBuffer);
         }
+
+        startTime = System.currentTimeMillis();
         int[] outshape = hwcOutputTensorBuffer.getShape();
         // [b, h, w, c]
         int outHeight = outshape[1];
         int outWidth = outshape[2];
         for (int i = 0; i < outshape.length; i++) {
-            Log.i("Debug output TensorBuffer shape", i + " " + outshape[i]);
+            Log.i("TFlite output TensorBuffer shape", i + " " + outshape[i]);
         }
         float[] hwcOutputData = hwcOutputTensorBuffer.getFloatArray();
         int[] pixels = new int[outHeight * outWidth];
@@ -107,6 +132,10 @@ public class InferenceTFLite {
                 pixels[yp++] = 0xff000000 | (r << 16 & 0xff0000) | (g << 8 & 0xff00) | (b & 0xff);
             }
         }
+        endTime = System.currentTimeMillis();
+        costTime = endTime - startTime;
+        Log.i("TFLite after process time:", Long.toString(costTime) + "ms");
+
         return pixels;
     }
 
